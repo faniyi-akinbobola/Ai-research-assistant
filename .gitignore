@@ -13,3 +13,12 @@ build/
 .venv/
 venv/
 .uv/
+.env
+
+# Chroma database
+data/vector_db/*
+!data/vector_db/.gitkeep
+
+# Data files (ignore PDFs in raw folder)
+data/raw/*
+!data/raw/.gitkeep
