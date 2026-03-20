@@ -7,15 +7,19 @@ def format_response(result: dict) -> str:
     """
     answer = result["answer"]
     sources = result["sources"]
+
+    # No sources for greetings/small talk
+    if not sources:
+        return answer
     
-    # Build formatted response
+    # Build formatted response with clean citations
     response = f"{answer}\n\n"
     response += "---\n\n"
-    response += f"📚 **Sources** ({result['source_count']} references):\n\n"
+    response += "**Sources:**\n\n"
     
-    for i, source in enumerate(sources, 1):
-        response += f"{i}. **Page {source['page']}**\n"
-        response += f"   _{source['content_preview']}_\n\n"
+    for source in sources:
+        filename = source['source'].replace(".pdf", "").replace("-", " ").title()
+        response += f"- 📄 {filename} — Page {source['page']}\n"
     
     return response
 
@@ -31,10 +35,15 @@ def chat_wrapper(message: str, history: list) -> str:
         user_msg = None
         for msg in history:
             if isinstance(msg, dict):
-                if msg.get("role") == "user":
-                    user_msg = msg.get("content", "")
-                elif msg.get("role") == "assistant" and user_msg is not None:
-                    converted_history.append((user_msg, msg.get("content", "")))
+                role = msg.get("role")
+                # content can be str or list in Gradio 6 multimodal
+                content = msg.get("content", "")
+                content_str = content if isinstance(content, str) else str(content)
+
+                if role == "user":
+                    user_msg = content_str
+                elif role == "assistant" and user_msg is not None:
+                    converted_history.append((user_msg, content_str))
                     user_msg = None
     
     try:

@@ -4,6 +4,7 @@ from langchain_chroma import Chroma
 from langchain_openai import OpenAIEmbeddings
 from dotenv import load_dotenv
 import os
+import re
 
 # Load environment variables
 load_dotenv()
@@ -12,7 +13,7 @@ load_dotenv()
 if not os.getenv("OPENAI_API_KEY"):
     raise ValueError("OPENAI_API_KEY not found in environment variables")
 
-MODEL = "gpt-4o"  
+MODEL = "gpt-5-mini"  
 
 # Load the EXISTING vector database
 embeddings = OpenAIEmbeddings(model="text-embedding-3-small", max_retries=3, request_timeout=30)
@@ -50,6 +51,51 @@ You are an expert AI Research Assistant specialized in analyzing and explaining 
 Answer the user's question based on this context. Be precise, thorough, and cite specific parts of the paper when relevant.
 """
 
+CONVERSATIONAL_PROMPT = """
+You are a friendly AI Research Assistant. Respond naturally and concisely to greetings and small talk.
+Keep responses short and warm. Do not reference any research papers unless specifically asked.
+"""
+
+# --- Query Classifier ---
+GREETINGS = {
+    "hi", "hello", "hey", "howdy", "sup", "yo", "hiya", "greetings",
+    "hey there", "hi there", "hello there", "good morning", "good afternoon",
+    "good evening", "good night", "morning", "whats up", "what's up",
+    "wassup", "heya", "howdy"
+}
+SMALL_TALK = {
+    "how are you", "how are you doing", "how is it going", "how do you do",
+    "what are you", "who are you", "what can you do", "what do you do",
+    "thanks", "thank you", "thank you so much", "cheers",
+    "bye", "goodbye", "see you", "take care",
+    "ok", "okay", "cool", "nice", "great", "awesome"
+}
+
+def classify_query(question: str) -> str:
+    """
+    Classify the query into: 'greeting', 'small_talk', or 'knowledge_query'
+    """
+    # Strip all punctuation and whitespace, not just trailing
+    normalized = re.sub(r"[^\w\s]", "", question.strip().lower()).strip()
+
+    # Exact match first
+    if normalized in GREETINGS:
+        return "greeting"
+
+    if normalized in SMALL_TALK:
+        return "small_talk"
+
+    # Partial match: short queries that start with a greeting word
+    words = normalized.split()
+    if len(words) <= 4 and words[0] in {"hi", "hey", "hello", "good", "morning", "howdy", "yo"}:
+        return "greeting"
+
+    # Partial match for small talk phrases
+    if any(phrase in normalized for phrase in SMALL_TALK):
+        return "small_talk"
+
+    return "knowledge_query"
+
 #fetch the content from the vector database
 def answer_question(question: str, history: list = []) -> dict:
     """
@@ -63,28 +109,48 @@ def answer_question(question: str, history: list = []) -> dict:
         dict with answer, sources, and source_count
     """
     try:
-        # Retrieve relevant chunks from the vector database
+        # --- Query Classifier Layer ---
+        query_type = classify_query(question)
+
+        # --- Handle non-knowledge queries without RAG ---
+        if query_type in ("greeting", "small_talk"):
+            messages = [
+                SystemMessage(content=CONVERSATIONAL_PROMPT),
+                HumanMessage(content=question)
+            ]
+            response = llm.invoke(messages)
+            return {
+                "answer": response.content,
+                "sources": [],
+                "source_count": 0
+            }
+
+        # --- RAG Trigger Layer: only for knowledge queries ---
         relevant_chunks = retriever.invoke(question)
         context_parts = []
         seen_sources = set()
         clean_sources = []
 
         for chunk in relevant_chunks:
-            source = chunk.metadata.get("source", "unknown source")
+            # Get clean filename instead of full path
+            raw_source = chunk.metadata.get("source", "unknown source")
+            filename = os.path.basename(raw_source)
             page = chunk.metadata.get("page", "unknown page")
-            source_key = (source, page)
+            # Pages are 0-indexed in PyPDF, make it human-readable
+            readable_page = page + 1 if isinstance(page, int) else page
+            source_key = (filename, readable_page)
 
             context_parts.append(
-                f"Source: {source}, Page: {page}\n{chunk.page_content}"
+                f"Source: {filename}, Page: {readable_page}\n{chunk.page_content}"
             )
 
-            # Add to clean sources (deduplicated)
-            if source_key not in seen_sources:
+            # Add to clean sources (deduplicated, max 2)
+            if source_key not in seen_sources and len(clean_sources) < 2:
                 seen_sources.add(source_key)
                 clean_sources.append({
-                    "source": source,
-                    "page": page,
-                    "content_preview": chunk.page_content[:300] + "..." if len(chunk.page_content) > 300 else chunk.page_content
+                    "source": filename,
+                    "page": readable_page,
+                    "content_preview": chunk.page_content[:200] + "..." if len(chunk.page_content) > 200 else chunk.page_content
                 })
         
         context = "\n\n".join(context_parts)
@@ -95,15 +161,20 @@ def answer_question(question: str, history: list = []) -> dict:
         messages = [SystemMessage(content=system_prompt)]
 
         # Add previous conversation turns
-        # Gradio history format: [[user_msg, bot_msg], [user_msg, bot_msg], ...]
         if history:
             for exchange in history:
-                if len(exchange) >= 2:  # Safety check
+                if len(exchange) >= 2:
                     user_msg, assistant_msg = exchange[0], exchange[1]
-                    if user_msg:  # Only add if not None
-                        messages.append(HumanMessage(content=user_msg))
-                    if assistant_msg:  # Only add if not None
-                        messages.append(AIMessage(content=assistant_msg))
+                    if user_msg:
+                        # user_msg can be str or list in Gradio 6
+                        user_text = user_msg if isinstance(user_msg, str) else str(user_msg)
+                        messages.append(HumanMessage(content=user_text))
+                    if assistant_msg:
+                        # assistant_msg can be str or list in Gradio 6
+                        assistant_text = assistant_msg if isinstance(assistant_msg, str) else str(assistant_msg)
+                        # Strip the sources block to avoid LLM copying it into answers
+                        clean_assistant_msg = assistant_text.split("\n\n---\n\n**Sources:**")[0].strip()
+                        messages.append(AIMessage(content=clean_assistant_msg))
 
         # Add current question
         messages.append(HumanMessage(content=question))
@@ -118,13 +189,12 @@ def answer_question(question: str, history: list = []) -> dict:
         }
     
     except Exception as e:
-        # Return error in expected format
         import traceback
         error_detail = traceback.format_exc()
         print(f"Error in answer_question: {error_detail}")
         
         return {
-            "answer": f"❌ Error: {str(e)}\n\nPlease try again or check your connection.",
+            "answer": f"Error: {str(e)}\n\nPlease try again or check your connection.",
             "sources": [],
             "source_count": 0
         }
