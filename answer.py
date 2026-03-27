@@ -3,8 +3,11 @@ from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from langchain_chroma import Chroma
 from langchain_openai import OpenAIEmbeddings
 from dotenv import load_dotenv
+from typing import Generator
 import os
 import re
+import time
+from metrics import log_query
 
 # Load environment variables
 load_dotenv()
@@ -13,47 +16,51 @@ load_dotenv()
 if not os.getenv("OPENAI_API_KEY"):
     raise ValueError("OPENAI_API_KEY not found in environment variables")
 
-MODEL = "gpt-5-mini"  
+MODEL = "gpt-4o-mini"
 
 # Load the EXISTING vector database
 embeddings = OpenAIEmbeddings(model="text-embedding-3-small", max_retries=3, request_timeout=30)
-vectorstore = Chroma(
-    persist_directory="./data/vector_db",
-    embedding_function=embeddings
-)
 
-# Create retriever to search the vector database
-retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
+def get_retriever():
+    """
+    Load a fresh retriever each call so newly ingested papers are always visible.
+    """
+    vectorstore = Chroma(
+        persist_directory="./data/vector_db",
+        embedding_function=embeddings
+    )
+    return vectorstore.as_retriever(search_kwargs={"k": 3})
 
 # Initialize the LLM
-llm = ChatOpenAI(model=MODEL, temperature=0.2, max_retries=3, request_timeout=30) 
+llm = ChatOpenAI(model=MODEL, temperature=0.2, max_retries=3, request_timeout=30, streaming=True)
+
+# One exact phrase used everywhere — in the prompt AND in the checker
+NOT_IN_PAPER = "This information is not covered in the uploaded papers."
 
 SYSTEM_PROMPT_TEMPLATE = """
-You are an expert AI Research Assistant specialized in analyzing and explaining academic papers in machine learning, deep learning, and artificial intelligence.
+You are an expert AI Research Assistant. Your sole purpose is to answer questions based strictly on the research paper excerpts provided below.
 
-## Your Role:
-- Provide clear, accurate explanations of research papers and their concepts
-- Break down complex technical ideas into understandable explanations
-- Reference specific sections, equations, or findings from the papers
-- Maintain academic rigor while being accessible
+## Rules:
+1. Only use information from the provided context to answer questions.
+2. If the answer cannot be found in the context, respond with exactly this phrase and nothing else:
+   "This information is not covered in the uploaded papers."
+3. Never suggest alternatives, offer general knowledge, or answer outside the provided context.
+4. When answering, cite the specific page number from the context.
+5. Be precise and thorough. Use headers and lists where helpful.
 
-## Guidelines:
-1. **Base answers strictly on the provided context** from the research paper
-2. If information is not in the context, clearly state: "This information is not covered in the provided paper"
-3. When explaining technical concepts, provide both high-level intuition and technical details
-4. Reference page numbers or sections when citing specific information
-5. Use clear structure with headers, lists, and examples when helpful
-6. If a question is ambiguous, ask for clarification
+## Context from Uploaded Papers:
+The following excerpts are from one or more uploaded research papers.
+Each excerpt is labeled with its source filename and page number.
 
-## Context from Research Paper:
 {context}
 
-Answer the user's question based on this context. Be precise, thorough, and cite specific parts of the paper when relevant.
+Answer the user's question using only the context above.
 """
 
 CONVERSATIONAL_PROMPT = """
-You are a friendly AI Research Assistant. Respond naturally and concisely to greetings and small talk.
-Keep responses short and warm. Do not reference any research papers unless specifically asked.
+You are a friendly assistant. The user is greeting you or making small talk.
+Respond warmly and briefly in one or two sentences.
+Do not mention research papers, documents, or your capabilities unless directly asked.
 """
 
 # --- Query Classifier ---
@@ -97,18 +104,23 @@ def classify_query(question: str) -> str:
     return "knowledge_query"
 
 #fetch the content from the vector database
-def answer_question(question: str, history: list = []) -> dict:
+def answer_question(question: str, history: list = []) -> Generator[dict, None, None]:
     """
-    Answer questions based on the research paper context.
-    
+    Stream answers based on the research paper context.
+
     Args:
         question: User's question
         history: Conversation history from Gradio (list of [user_msg, bot_msg] pairs)
-    
-    Returns:
-        dict with answer, sources, and source_count
+
+    Yields:
+        dict with partial answer, sources, source_count, and done flag
     """
+    query_type = "knowledge_query"
+    start_time = time.time()
+
     try:
+        start_time = time.time()
+
         # --- Query Classifier Layer ---
         query_type = classify_query(question)
 
@@ -118,25 +130,41 @@ def answer_question(question: str, history: list = []) -> dict:
                 SystemMessage(content=CONVERSATIONAL_PROMPT),
                 HumanMessage(content=question)
             ]
-            response = llm.invoke(messages)
-            return {
-                "answer": response.content,
+            partial_answer = ""
+            for chunk in llm.stream(messages):
+                partial_answer += chunk.content
+                yield {
+                    "answer": partial_answer,
+                    "sources": [],
+                    "source_count": 0,
+                    "done": False
+                }
+            yield {
+                "answer": partial_answer,
                 "sources": [],
-                "source_count": 0
+                "source_count": 0,
+                "done": True
             }
+            log_query(
+                question=question,
+                query_type=query_type,
+                response_time_ms=(time.time() - start_time) * 1000,
+                sources_count=0,
+                sources_shown=False
+            )
+            return
 
         # --- RAG Trigger Layer: only for knowledge queries ---
+        retriever = get_retriever()
         relevant_chunks = retriever.invoke(question)
         context_parts = []
         seen_sources = set()
         clean_sources = []
 
         for chunk in relevant_chunks:
-            # Get clean filename instead of full path
             raw_source = chunk.metadata.get("source", "unknown source")
             filename = os.path.basename(raw_source)
             page = chunk.metadata.get("page", "unknown page")
-            # Pages are 0-indexed in PyPDF, make it human-readable
             readable_page = page + 1 if isinstance(page, int) else page
             source_key = (filename, readable_page)
 
@@ -144,7 +172,6 @@ def answer_question(question: str, history: list = []) -> dict:
                 f"Source: {filename}, Page: {readable_page}\n{chunk.page_content}"
             )
 
-            # Add to clean sources (deduplicated, max 2)
             if source_key not in seen_sources and len(clean_sources) < 2:
                 seen_sources.add(source_key)
                 clean_sources.append({
@@ -152,12 +179,9 @@ def answer_question(question: str, history: list = []) -> dict:
                     "page": readable_page,
                     "content_preview": chunk.page_content[:200] + "..." if len(chunk.page_content) > 200 else chunk.page_content
                 })
-        
+
         context = "\n\n".join(context_parts)
-        
-        # Create system prompt with context
         system_prompt = SYSTEM_PROMPT_TEMPLATE.format(context=context)
-        
         messages = [SystemMessage(content=system_prompt)]
 
         # Add previous conversation turns
@@ -166,37 +190,61 @@ def answer_question(question: str, history: list = []) -> dict:
                 if len(exchange) >= 2:
                     user_msg, assistant_msg = exchange[0], exchange[1]
                     if user_msg:
-                        # user_msg can be str or list in Gradio 6
                         user_text = user_msg if isinstance(user_msg, str) else str(user_msg)
                         messages.append(HumanMessage(content=user_text))
                     if assistant_msg:
-                        # assistant_msg can be str or list in Gradio 6
                         assistant_text = assistant_msg if isinstance(assistant_msg, str) else str(assistant_msg)
-                        # Strip the sources block to avoid LLM copying it into answers
                         clean_assistant_msg = assistant_text.split("\n\n---\n\n**Sources:**")[0].strip()
                         messages.append(AIMessage(content=clean_assistant_msg))
 
-        # Add current question
         messages.append(HumanMessage(content=question))
-        
-        # Get answer from the LLM
-        response = llm.invoke(messages)
-        
-        return {
-            "answer": response.content,
+
+        # --- Response Generator Layer: stream the response ---
+        partial_answer = ""
+        for chunk in llm.stream(messages):
+            partial_answer += chunk.content
+            yield {
+                "answer": partial_answer,
+                "sources": clean_sources,
+                "source_count": len(clean_sources),
+                "done": False
+            }
+
+        # Final yield signals streaming is complete
+        not_in_paper = NOT_IN_PAPER.lower() in partial_answer.lower()
+        sources_shown = bool(clean_sources) and not not_in_paper
+
+        yield {
+            "answer": partial_answer,
             "sources": clean_sources,
-            "source_count": len(clean_sources)
+            "source_count": len(clean_sources),
+            "done": True
         }
-    
+
+        log_query(
+            question=question,
+            query_type=query_type,
+            response_time_ms=(time.time() - start_time) * 1000,
+            sources_count=len(clean_sources),
+            sources_shown=sources_shown
+        )
+
     except Exception as e:
         import traceback
-        error_detail = traceback.format_exc()
-        print(f"Error in answer_question: {error_detail}")
-        
-        return {
+        print(f"Error in answer_question: {traceback.format_exc()}")
+        log_query(
+            question=question,
+            query_type=query_type,
+            response_time_ms=(time.time() - start_time) * 1000,
+            sources_count=0,
+            sources_shown=False,
+            error=True
+        )
+        yield {
             "answer": f"Error: {str(e)}\n\nPlease try again or check your connection.",
             "sources": [],
-            "source_count": 0
+            "source_count": 0,
+            "done": True
         }
 
 

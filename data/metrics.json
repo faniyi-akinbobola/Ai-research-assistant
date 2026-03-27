@@ -1,0 +1,382 @@
+{
+  "total_queries": 41,
+  "query_types": {
+    "greeting": 1,
+    "small_talk": 8,
+    "knowledge_query": 32
+  },
+  "errors": 0,
+  "sources_shown": 11,
+  "sources_hidden": 30,
+  "queries": [
+    {
+      "timestamp": "2026-03-27T11:31:56.187651",
+      "question": "What is the Transformer architecture?",
+      "query_type": "knowledge_query",
+      "response_time_ms": 12503.12,
+      "sources_count": 2,
+      "sources_shown": false,
+      "error": false
+    },
+    {
+      "timestamp": "2026-03-27T11:32:12.431734",
+      "question": "who is ichigo?",
+      "query_type": "knowledge_query",
+      "response_time_ms": 7862.52,
+      "sources_count": 2,
+      "sources_shown": false,
+      "error": false
+    },
+    {
+      "timestamp": "2026-03-27T11:32:51.792107",
+      "question": "hey there",
+      "query_type": "greeting",
+      "response_time_ms": 1268.61,
+      "sources_count": 0,
+      "sources_shown": false,
+      "error": false
+    },
+    {
+      "timestamp": "2026-03-27T11:34:35.860543",
+      "question": "who is ichigo?",
+      "query_type": "knowledge_query",
+      "response_time_ms": 2914.32,
+      "sources_count": 2,
+      "sources_shown": false,
+      "error": false
+    },
+    {
+      "timestamp": "2026-03-27T11:34:46.599485",
+      "question": "what is ai",
+      "query_type": "knowledge_query",
+      "response_time_ms": 4199.54,
+      "sources_count": 2,
+      "sources_shown": false,
+      "error": false
+    },
+    {
+      "timestamp": "2026-03-27T11:35:03.830506",
+      "question": "what is the title of  this paper?",
+      "query_type": "knowledge_query",
+      "response_time_ms": 5884.29,
+      "sources_count": 2,
+      "sources_shown": true,
+      "error": false
+    },
+    {
+      "timestamp": "2026-03-27T11:35:28.623173",
+      "question": "what is the architecture?",
+      "query_type": "knowledge_query",
+      "response_time_ms": 10670.41,
+      "sources_count": 2,
+      "sources_shown": true,
+      "error": false
+    },
+    {
+      "timestamp": "2026-03-27T16:11:19.158365",
+      "question": "How does Robin Wieruch define 'Lifting State' in the context of the Hacker News application?",
+      "query_type": "knowledge_query",
+      "response_time_ms": 6084.93,
+      "sources_count": 2,
+      "sources_shown": true,
+      "error": false
+    },
+    {
+      "timestamp": "2026-03-27T16:11:44.709194",
+      "question": "The book mentions a useStorageState custom hook. Explain its purpose and the two arguments it accept",
+      "query_type": "small_talk",
+      "response_time_ms": 2317.35,
+      "sources_count": 0,
+      "sources_shown": false,
+      "error": false
+    },
+    {
+      "timestamp": "2026-03-27T16:12:15.203853",
+      "question": "According to the book, what are the pros and cons of using 'Inline Handlers' versus 'Named Handler F",
+      "query_type": "small_talk",
+      "response_time_ms": 2801.33,
+      "sources_count": 0,
+      "sources_shown": false,
+      "error": false
+    },
+    {
+      "timestamp": "2026-03-27T16:12:47.313397",
+      "question": "How does the implementation of TypeScript change the way 'Props' are handled in the advanced chapter",
+      "query_type": "knowledge_query",
+      "response_time_ms": 2593.1,
+      "sources_count": 2,
+      "sources_shown": false,
+      "error": false
+    },
+    {
+      "timestamp": "2026-03-27T16:13:09.404836",
+      "question": "How does the author recommend setting up a Redux Store for the Hacker News app?",
+      "query_type": "knowledge_query",
+      "response_time_ms": 2583.26,
+      "sources_count": 2,
+      "sources_shown": false,
+      "error": false
+    },
+    {
+      "timestamp": "2026-03-27T16:15:29.373981",
+      "question": "Describe the journey of the 'Search' feature. How does it evolve from a simple client-side filter to",
+      "query_type": "knowledge_query",
+      "response_time_ms": 9232.08,
+      "sources_count": 2,
+      "sources_shown": true,
+      "error": false
+    },
+    {
+      "timestamp": "2026-03-27T16:17:24.626874",
+      "question": "Explain the concept of Ufuncs (Universal Functions) in NumPy. Why are they computationally superior ",
+      "query_type": "knowledge_query",
+      "response_time_ms": 3218.83,
+      "sources_count": 2,
+      "sources_shown": false,
+      "error": false
+    },
+    {
+      "timestamp": "2026-03-27T16:17:45.801957",
+      "question": "How does Pandas handle missing data (NaN) when performing vectorized string operations compared to s",
+      "query_type": "knowledge_query",
+      "response_time_ms": 2434.54,
+      "sources_count": 2,
+      "sources_shown": false,
+      "error": false
+    },
+    {
+      "timestamp": "2026-03-27T16:29:42.773517",
+      "question": "tell me about algorithms based on this paper",
+      "query_type": "knowledge_query",
+      "response_time_ms": 2747.07,
+      "sources_count": 2,
+      "sources_shown": false,
+      "error": false
+    },
+    {
+      "timestamp": "2026-03-27T17:00:30.965447",
+      "question": "list the two arguements that the two useEffect hook accepts according to the other",
+      "query_type": "small_talk",
+      "response_time_ms": 3012.98,
+      "sources_count": 0,
+      "sources_shown": false,
+      "error": false
+    },
+    {
+      "timestamp": "2026-03-27T17:14:00.488156",
+      "question": "What is the purpose of the LLM Engineer\u2019s Handbook?",
+      "query_type": "small_talk",
+      "response_time_ms": 2316.19,
+      "sources_count": 0,
+      "sources_shown": false,
+      "error": false
+    },
+    {
+      "timestamp": "2026-03-27T17:14:57.815724",
+      "question": "What is the role of MLOps in LLM systems?",
+      "query_type": "knowledge_query",
+      "response_time_ms": 6243.26,
+      "sources_count": 2,
+      "sources_shown": true,
+      "error": false
+    },
+    {
+      "timestamp": "2026-03-27T17:15:22.812780",
+      "question": "What are the three pipelines in the FTI architecture?",
+      "query_type": "knowledge_query",
+      "response_time_ms": 3775.98,
+      "sources_count": 2,
+      "sources_shown": true,
+      "error": false
+    },
+    {
+      "timestamp": "2026-03-27T17:15:46.418650",
+      "question": "Why is building an LLM Twin useful?",
+      "query_type": "knowledge_query",
+      "response_time_ms": 3406.24,
+      "sources_count": 2,
+      "sources_shown": true,
+      "error": false
+    },
+    {
+      "timestamp": "2026-03-27T17:16:23.793672",
+      "question": "What is an algorithm?",
+      "query_type": "knowledge_query",
+      "response_time_ms": 1865.19,
+      "sources_count": 2,
+      "sources_shown": false,
+      "error": false
+    },
+    {
+      "timestamp": "2026-03-27T17:16:36.307344",
+      "question": "Who are the authors of the Algorithms book?",
+      "query_type": "small_talk",
+      "response_time_ms": 1525.78,
+      "sources_count": 0,
+      "sources_shown": false,
+      "error": false
+    },
+    {
+      "timestamp": "2026-03-27T17:16:48.687253",
+      "question": "What are examples of sorting algorithms listed?",
+      "query_type": "knowledge_query",
+      "response_time_ms": 2989.05,
+      "sources_count": 2,
+      "sources_shown": false,
+      "error": false
+    },
+    {
+      "timestamp": "2026-03-27T17:17:16.339883",
+      "question": "What programming language is used in the course?",
+      "query_type": "knowledge_query",
+      "response_time_ms": 2374.61,
+      "sources_count": 2,
+      "sources_shown": false,
+      "error": false
+    },
+    {
+      "timestamp": "2026-03-27T17:17:30.985385",
+      "question": "What is the difference between an algorithm and a data structure?",
+      "query_type": "knowledge_query",
+      "response_time_ms": 2315.61,
+      "sources_count": 2,
+      "sources_shown": false,
+      "error": false
+    },
+    {
+      "timestamp": "2026-03-27T17:17:44.851443",
+      "question": "Why are data structures important for programming?",
+      "query_type": "knowledge_query",
+      "response_time_ms": 1609.24,
+      "sources_count": 2,
+      "sources_shown": false,
+      "error": false
+    },
+    {
+      "timestamp": "2026-03-27T17:18:55.207825",
+      "question": "What is the difference between architecture and organization?",
+      "query_type": "knowledge_query",
+      "response_time_ms": 2277.26,
+      "sources_count": 2,
+      "sources_shown": false,
+      "error": false
+    },
+    {
+      "timestamp": "2026-03-27T17:19:11.425420",
+      "question": "Explain computer architecture in simple terms",
+      "query_type": "knowledge_query",
+      "response_time_ms": 1959.97,
+      "sources_count": 2,
+      "sources_shown": false,
+      "error": false
+    },
+    {
+      "timestamp": "2026-03-27T17:19:53.161467",
+      "question": "who said this \"\u201c For me, great algorithms are the poetry of computation. Just like \n verse, they can",
+      "query_type": "small_talk",
+      "response_time_ms": 1310.12,
+      "sources_count": 0,
+      "sources_shown": false,
+      "error": false
+    },
+    {
+      "timestamp": "2026-03-27T17:20:20.017361",
+      "question": "who said this \u201c An algorithm must be seen to be believed. \u201d \u2014",
+      "query_type": "knowledge_query",
+      "response_time_ms": 2026.33,
+      "sources_count": 2,
+      "sources_shown": false,
+      "error": false
+    },
+    {
+      "timestamp": "2026-03-27T17:21:35.807696",
+      "question": "what is method for solving a problem?",
+      "query_type": "knowledge_query",
+      "response_time_ms": 2478.89,
+      "sources_count": 2,
+      "sources_shown": false,
+      "error": false
+    },
+    {
+      "timestamp": "2026-03-27T17:26:35.088638",
+      "question": "Explain why algorithms are considered essential in modern science",
+      "query_type": "knowledge_query",
+      "response_time_ms": 1738.49,
+      "sources_count": 2,
+      "sources_shown": false,
+      "error": false
+    },
+    {
+      "timestamp": "2026-03-27T17:27:56.750729",
+      "question": "who is the author of the _LLM_Engineers_Handbook_?",
+      "query_type": "small_talk",
+      "response_time_ms": 1733.27,
+      "sources_count": 0,
+      "sources_shown": false,
+      "error": false
+    },
+    {
+      "timestamp": "2026-03-27T17:28:18.659424",
+      "question": "who is the author of attention-is-all-you-need.pdf?",
+      "query_type": "knowledge_query",
+      "response_time_ms": 1681.35,
+      "sources_count": 1,
+      "sources_shown": false,
+      "error": false
+    },
+    {
+      "timestamp": "2026-03-27T17:29:08.491003",
+      "question": "what is the architecture of the attention is all you need work?",
+      "query_type": "knowledge_query",
+      "response_time_ms": 1563.16,
+      "sources_count": 1,
+      "sources_shown": false,
+      "error": false
+    },
+    {
+      "timestamp": "2026-03-27T17:37:13.193672",
+      "question": "who is the author of The_Road_to_React_2024_Edition",
+      "query_type": "knowledge_query",
+      "response_time_ms": 2010.39,
+      "sources_count": 2,
+      "sources_shown": true,
+      "error": false
+    },
+    {
+      "timestamp": "2026-03-27T17:38:23.599919",
+      "question": "what is the transformer architecture?",
+      "query_type": "knowledge_query",
+      "response_time_ms": 14378.77,
+      "sources_count": 2,
+      "sources_shown": true,
+      "error": false
+    },
+    {
+      "timestamp": "2026-03-27T17:38:50.401400",
+      "question": "who is the author of LLM_Engineers_Handbook?",
+      "query_type": "small_talk",
+      "response_time_ms": 2140.35,
+      "sources_count": 0,
+      "sources_shown": false,
+      "error": false
+    },
+    {
+      "timestamp": "2026-03-27T17:55:03.857300",
+      "question": "how does multi head attention work?",
+      "query_type": "knowledge_query",
+      "response_time_ms": 10587.14,
+      "sources_count": 2,
+      "sources_shown": true,
+      "error": false
+    },
+    {
+      "timestamp": "2026-03-27T17:57:14.082232",
+      "question": "Define MLOps in the context of LLMs",
+      "query_type": "knowledge_query",
+      "response_time_ms": 7806.24,
+      "sources_count": 2,
+      "sources_shown": true,
+      "error": false
+    }
+  ]
+}

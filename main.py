@@ -1,5 +1,7 @@
 import os
 from dotenv import load_dotenv
+from ui import launch_ui
+
 
 def main():
     """
@@ -32,7 +34,6 @@ def main():
     
     # Launch the Gradio UI
     print("\n🚀 Launching Gradio interface...")
-    from ui import launch_ui
     launch_ui()
 
 if __name__ == "__main__":
